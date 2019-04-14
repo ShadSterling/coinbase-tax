@@ -1,0 +1,22 @@
+{
+	"compileOnSave": true,
+    "compilerOptions": {
+		"lib": ["es2017"],
+		"target": "es5",
+        "module": "commonjs",
+        "outDir": "./dist/",
+
+        "inlineSourceMap": true,
+		"jsx": "react",
+
+        "allowUnreachableCode": true,
+        "downlevelIteration": true,
+        "moduleResolution": "node",
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+        "suppressImplicitAnyIndexErrors": false
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

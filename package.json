@@ -1,0 +1,51 @@
+{
+	"name": "coinbase-tax",
+	"homepage": "",
+	"version": "0.0.1",
+	"description": "Assemble tax information from a coinbase.com account",
+	"author": "Shad Sterling <me@shadsterling.com>",
+	"license": "AGPL-3.0",
+	"private": true,
+	"keywords": [
+		"bitcoin",
+		"cryptocurrency"
+	],
+	"main": "dist/index.js",
+	"bin": {
+		"crypump": "dist/index.js"
+	},
+	"scripts": {
+		"bstart": "npm run clean && npm run build && npm run start",
+		"bstop": "npm run clean && npm run build && npm run stop",
+		"build": "tsc",
+		"clean": "rm -rf dist",
+		"deps": "npm i",
+		"rebuild": "npm run reset && npm run deps && npm run build",
+		"reset": "npm run clean; rm -rf node_modules",
+		"restart": "npm run rebuild && npm run start",
+		"start": "node dist/index.js",
+		"stop": "node dist/index.js",
+		"test": "karma start"
+	},
+	"dependencies": {
+		"axios": "0.17.X",
+		"caller": "1.0.X",
+		"coinbase": "2.0.X",
+		"commander": "2.13.X",
+		"fs-extra": "5.0.X",
+		"moment": "2.20.X",
+		"proper-lockfile": "3.0.X",
+		"sprintf-js": "1.1.X",
+		"username": "3.0.X"
+	},
+	"devDependencies": {
+		"@types/coinbase": "2.0.X",
+		"@types/debug": "0.0.31",
+		"@types/fs-extra": "^5.0.0",
+		"@types/mkdirp": "0.5.X",
+		"@types/node": "9.3.X",
+		"@types/proper-lockfile": "3.0.0",
+		"source-map-support": "0.5.X",
+		"typescript": "3.0.X"
+	}
+}
