@@ -47,7 +47,7 @@ if( !accountInfo ) {
 			}
 			let transactions = [];
 			function getTransactions( acct: any, all_txs: any[], callback: (all_txs:any[])=>void, pag = undefined ): void {
-				let options = pag ? pag : { limit: 100, order: "asc" };
+				let options = pag ? pag : { limit: 17, order: "asc" };
 				console.log( `Reading transactions with options ${JSON.stringify(options)}` );
 				acct.getTransactions(
 					options,
@@ -325,7 +325,7 @@ class Transaction {
 		if( error > 0.00000000000001 ) { throw new Error( `Balance mismatch: ${this.balance} ≠ ${balance}` ); }
 	}
 
-	get timeString() { return new Date(this.time*1000).toString(); }
+	get timeString() { return new Date(this.time*1000).toString().replace("Eastern Standard Time","EST").replace("Eastern Daylight Time","EDT"); }
 	get holdings() { return this.holdings_iterator(); }
 	*holdings_iterator() { yield* this._acquired; yield* this._held; }
 }
@@ -410,8 +410,8 @@ class Holding {
 	get divestment_price(): number | undefined { return this._divestment_price; }
 	get divestment_rate(): number | undefined { return this._divestment_rate; }
 	get divestment_split(): Set<Holding> | undefined { return this._divestment_split; }
-	get timeAcquired() { return new Date(this.acquisition_time*1000).toString(); }
-	get timeDivested() { return this._divestment_time ? new Date(this._divestment_time*1000).toString() : undefined; }
+	get timeAcquired() { return new Date(this.acquisition_time*1000).toString().replace("Eastern Standard Time","EST").replace("Eastern Daylight Time","EDT"); }
+	get timeDivested() { return this._divestment_time ? new Date(this._divestment_time*1000).toString().replace("Eastern Standard Time","EST").replace("Eastern Daylight Time","EDT") : undefined; }
 	get duration() { return  this._divestment_time ? this._divestment_time - this.acquisition_time : undefined; }
 	get gain() { return this._divestment_price ? this._divestment_price - this.acquisition_price : undefined; }
 	toString() {
