@@ -28,7 +28,7 @@
 		"test": "karma start"
 	},
 	"dependencies": {
-		"axios": "0.17.X",
+		"axios": "0.19.2",
 		"caller": "1.0.X",
 		"coinbase": "2.0.X",
 		"commander": "2.13.X",
