@@ -1,6 +1,11 @@
+import { spawnSync } from "child_process";
+import { Console } from "console";
+import * as moment from "moment";
+import { sprintf } from "sprintf-js";
+
 try {
 	require('source-map-support').install()
-	console.log( `Source map support loaded - stack traces shhould show actual source rather than compiled javascript` );
+	console.log( `Source map support loaded - stack traces should show actual source rather than compiled javascript` );
 } catch(e) {
 	console.log( `No source map support - stack traces will show compiled javascript rather than actual source (${e})` );
 }
@@ -28,6 +33,9 @@ if( !accountInfo ) {
 	client.getAccounts( {}, (err:Error,accountList:any[]) => {
 		if( err ) {
 			console.log( "Failed to retrieve account information -- "+err.message );
+			if( /UNABLE_TO_GET_ISSUER_CERT_LOCALLY|unable to get local issuer certificate/.test(err.message) ) {
+				console.log( "This error can be bypassed by adding an override to your credentials: \"strictSSL\": false" );
+			}
 			process.exit(3);
 		} else {
 			console.log( "Connected to account..." );
@@ -46,26 +54,26 @@ if( !accountInfo ) {
 				process.exit(4);
 			}
 			let transactions = [];
-			function getTransactions( acct: any, all_txs: any[], callback: (all_txs:any[])=>void, pag = undefined ): void {
-				let options = pag ? pag : { limit: 17, order: "asc" };
-				console.log( `Reading transactions with options ${JSON.stringify(options)}` );
+			let getTransactions = function( acct: any, all_txs: any[], callback: (all_txs:any[])=>void, pag = undefined ): void {
+				let options = pag ? pag : { limit: 100, order: "asc" };
+				console.log( `... Reading transactions with options ${JSON.stringify(options)}` );
 				acct.getTransactions(
 					options,
 					( err:Error, txs:any[], pagination:any ) => {
 						if( err ) {
-							console.log( `Error reading transactions: ${err}` );
+							console.log( `!!! Error reading transactions: ${err}` );
 							callback( all_txs );
 						} else {
-							console.log( `Read ${txs.length} transactions` );
+							console.log( `... Read ${txs.length} transactions` );
 							if( txs.length == 0 ) {
 								callback( all_txs );
 							} else {
 								all_txs.push( ...txs );
 								if( pagination.next_uri ) {
-									console.log( `Recursing to read transactions after ${txs[txs.length-1].id}` );
+									console.log( `... Recursing to read transactions after ${txs[txs.length-1].id} (because callback style doesn't allow iteration)` );
 									getTransactions( acct, all_txs, callback, pagination );
 								} else {
-									console.log( `Finished reading with ${txs[txs.length-1].id}` );
+									console.log( `... Finished reading with ${txs[txs.length-1].id}` );
 									callback( all_txs );
 								}
 							}
@@ -82,7 +90,7 @@ if( !accountInfo ) {
 					try {
 						ledger.add( rtx );
 					} catch(e) {
-						console.log( "----- Exception" );
+						console.log( `----- Exception: ${e.message}` );
 						console.log( "Last Transaction:", ledger.last );
 						console.log( "New Transaction:", rtx );
 						throw e;
@@ -159,6 +167,11 @@ class Transaction {
 				break;
 			}
 			case "exchange_deposit": {
+				this.type = "TRANSFER";
+				this.direction = "OUT";
+				break;
+			}
+			case "pro_deposit": {
 				this.type = "TRANSFER";
 				this.direction = "OUT";
 				break;
@@ -294,7 +307,20 @@ class Transaction {
 			}
 			default: { throw new Error( `Unhandled case: direction = ${this.direction}` ); break; }
 		}
-		console.log( ` ---------- ${this.timeString}${prev && this.time < prev.time ? " ** DELAYED" : ""} -- ${this.id}: ${this.balance} <= ${this.direction}/${this.type} ${this.amount} @ ${this.exchange_rate} = ${this.exchange_amount} => +++ ${this._acquired} === ${this._held} --- ${this._divested}` );
+		console.log(
+			sprintf(
+				` ---------- ${this.timeString}${prev && this.time < prev.time ? " ** DELAYED" : ""} -- ${this.id}: %11.8f <= %3s/%-8s %11.8f @ %12.6f = %9.2f => +++ %11.8f === %11.8f --- %11.8f`,
+				this.balance,
+				this.direction,
+				this.type,
+				this.amount,
+				this.exchange_rate,
+				this.exchange_amount,
+				this._acquired,
+				this._held,
+				this._divested,
+			)
+		);
 		// if( this._acquired.count > 0 ) {
 		// 	for( const holding of this._acquired ) {
 		// 		console.log( `ACQUIRED ${holding}` );
@@ -325,7 +351,7 @@ class Transaction {
 		if( error > 0.00000000000001 ) { throw new Error( `Balance mismatch: ${this.balance} ≠ ${balance}` ); }
 	}
 
-	get timeString() { return new Date(this.time*1000).toString().replace("Eastern Standard Time","EST").replace("Eastern Daylight Time","EDT"); }
+	get timeString() { return moment(this.time*1000).format("YYYY-MM[]MMM-DDddd HH:mm:ss Z").replace("-05:00","EST").replace("-04:00","EDT"); }
 	get holdings() { return this.holdings_iterator(); }
 	*holdings_iterator() { yield* this._acquired; yield* this._held; }
 }
@@ -410,17 +436,17 @@ class Holding {
 	get divestment_price(): number | undefined { return this._divestment_price; }
 	get divestment_rate(): number | undefined { return this._divestment_rate; }
 	get divestment_split(): Set<Holding> | undefined { return this._divestment_split; }
-	get timeAcquired() { return new Date(this.acquisition_time*1000).toString().replace("Eastern Standard Time","EST").replace("Eastern Daylight Time","EDT"); }
-	get timeDivested() { return this._divestment_time ? new Date(this._divestment_time*1000).toString().replace("Eastern Standard Time","EST").replace("Eastern Daylight Time","EDT") : undefined; }
+	get timeAcquired() { return moment(this.acquisition_time*1000).format("YYYY-MM[]MMM-DDddd HH:mm:ss Z").replace("-05:00","EST").replace("-04:00","EDT"); }
+	get timeDivested() { return this._divestment_time ? moment(this._divestment_time*1000).format("YYYY-MM[]MMM-DDddd HH:mm:ss Z").replace("-05:00","EST").replace("-04:00","EDT") : undefined; }
 	get duration() { return  this._divestment_time ? this._divestment_time - this.acquisition_time : undefined; }
-	get gain() { return this._divestment_price ? this._divestment_price - this.acquisition_price : undefined; }
+	get gain() { return (typeof this._divestment_price == "number") ? this._divestment_price - this.acquisition_price : undefined; }
 	toString() {
 		if( this._divestment_tx ) {
-			return `Amount ${this.amount}; Acquired At ${this.timeAcquired}, Divested At ${this.timeDivested}, Held for ${this.duration!/86400} days; Divested @ ${this._divestment_rate} for ${this.divestment_price}, Acquired @ ${this.acquisition_rate} for ${this.acquisition_price}; Capital Gain ${this.gain}`;
+			return sprintf( `Amount %11.8f; Acquired At ${this.timeAcquired}, Divested At ${this.timeDivested}, Held for %10.6f days; Divested @ %12.6f for %9.2f, Acquired @ %12.6f for %9.2f; Capital Gain %8.2f`, this.amount, this.duration!/86400, this._divestment_rate, this.divestment_price, this.acquisition_rate, this.acquisition_price, this.gain );
 		} else if( this._divestment_split ) {
-			return `Amount ${this.amount}; Acquired At ${this.timeAcquired}, Split At ${this.timeDivested}, Held for ${this.duration!/86400} days`;
+			return sprintf( `Amount %11.8f; Acquired At ${this.timeAcquired}, Split At ${this.timeDivested}, Held for %10.6f days`, this.amount, this.duration!/86400 );
 		} else {
-			return `Amount ${this.amount}; Acquired At ${this.timeAcquired}`;
+			return sprintf( `Amount %11.8f; Acquired At ${this.timeAcquired}`, this.amount );
 		}
 	}
 }

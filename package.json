@@ -1,7 +1,7 @@
 {
 	"name": "coinbase-tax",
 	"homepage": "",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"description": "Assemble tax information from a coinbase.com account",
 	"author": "Shad Sterling <me@shadsterling.com>",
 	"license": "AGPL-3.0",
@@ -24,19 +24,17 @@
 		"reset": "npm run clean; rm -rf node_modules",
 		"restart": "npm run rebuild && npm run start",
 		"start": "node dist/index.js",
-		"stop": "node dist/index.js",
-		"test": "karma start"
+		"stop": "node dist/index.js"
 	},
 	"dependencies": {
-		"axios": "0.19.X",
 		"caller": "1.0.X",
 		"coinbase": "2.0.X",
 		"commander": "2.13.X",
 		"fs-extra": "5.0.X",
-		"moment": "2.20.X",
+		"moment-timezone": "0.5.X",
 		"proper-lockfile": "3.0.X",
 		"sprintf-js": "1.1.X",
-		"username": "3.0.X"
+		"username": "5.1.X"
 	},
 	"devDependencies": {
 		"@types/coinbase": "2.0.X",
@@ -45,7 +43,8 @@
 		"@types/mkdirp": "0.5.X",
 		"@types/node": "9.3.X",
 		"@types/proper-lockfile": "3.0.0",
+		"@types/sprintf-js": "1.1.X",
 		"source-map-support": "0.5.X",
-		"typescript": "3.0.X"
+		"typescript": "3.4.X"
 	}
 }
